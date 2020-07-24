@@ -1,0 +1,88 @@
+---
+title: "Modelling Infectious Diseases"
+author: "Amin Adibi"
+date: "23/07/2020"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Basic SIR Model
+
+
+![SIRModel](./SIR.png)
+
+We can write the following equations for the rate of change in each of these compartments:
+
+$$
+\frac{dS}{dt} = - \beta SI \\
+\frac{dI}{dt} = \beta SI - \gamma \\
+\frac{dR}{dt} = \gamma I$$
+
+## Initial Conditions
+
+In the absence of no immunity, initially, most people are susceptible, there will be a very small of infectious people, and no one is recovered. So,
+
+$$
+S_0 = Population - few\\
+I_0 = few\\
+R_0 = 0
+$$
+
+## Solving the Equations
+
+Using these initial conditions, we can easily solve these equations in R.
+```{r SIR}
+library(deSolve)
+sir <- function(time, state, parameters) {
+  with(as.list(c(state, parameters)), {
+    dS <- -beta * S * I
+    dI <- beta * S * I - gamma * I
+    dR <- gamma * I
+	
+    return(list(c(dS, dI, dR)))
+  })
+}
+
+init <- c(S = 1-1e-6, I = 1e-6, 0.0)
+parameters <- c(beta = 1.4247, gamma = 0.14286)
+times <- seq(0, 70, by = 1)
+out <- as.data.frame(ode(y = init, times = times, func = sir, parms = parameters))
+out$time <- NULL
+
+matplot(times, out, type = "l", xlab = "Time", ylab = "Susceptible and Recovered", main = "SIR Model", lwd = 1, lty = 1, bty = "l", col = 2:4)
+legend(40, 0.7, c("Susceptible", "Infected", "Recovered"), pch = 1, col = 2:4)
+```
+
+
+<!-- ```{r SEIR} -->
+<!-- library(deSolve) -->
+<!-- seir <- function(time, state, parameters) { -->
+<!--   with(as.list(c(state, parameters)), { -->
+<!--     dS <- -beta * S * (I+E2)/N -->
+<!--     dE1 <- beta * S * (I+E2)/N - k1*E1 -->
+<!--     dE2 <- k1*E1 - k2*E2  -->
+<!--     dI <- k2*E2 - q*I - I/D -->
+<!--     dQ <- q*I - Q/D -->
+<!--     dR <- I/D+Q/D -->
+
+<!--     return(list(c(dS, dE1, dE2, dI, dQ, dR))) -->
+<!--   }) -->
+<!-- } -->
+
+<!-- init <- c(E1=0.53, E2=0.13, S = 849999, I = 0.67, R=0.0, Q=0) -->
+<!-- parameters <- c(beta = 1.4, N = 5.1e6, D = 5, k1 = 0.2, k2 = 1, q = 0.05) -->
+<!-- times <- seq(0, 70, by = 1) -->
+<!-- sol<-lsoda(init,times,seir,parameters) -->
+
+<!-- out <- as.data.frame(ode(y = init, times = times, func = seir, parms = parameters)) -->
+<!-- out$time <- NULL -->
+
+<!-- matplot(times, out, type = "l", xlab = "Time", ylab = "Susceptible and Recovered", main = "SEIR Model", lwd = 1, lty = 1, bty = "l", col = 2:4) -->
+<!-- legend(40, 0.7, c("Susceptible", "Infected", "Recovered"), pch = 1, col = 2:4) -->
+<!-- ``` -->
+
